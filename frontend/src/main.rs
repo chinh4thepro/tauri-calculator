@@ -8,7 +8,7 @@ fn main() {
 pub fn App() -> Html {
     html! {
         <div class="calculator">
-            
+            <h1>{"Hello!!!"}</h1>
         </div>
     }
 }
