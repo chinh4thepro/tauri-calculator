@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-web-sys = "0.3.65"
+web-sys = { version = "0.3.65", features = ["HtmlButtonElement"] }
 yew = { version = "0.21.0", features = ["csr"] }

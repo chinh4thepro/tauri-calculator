@@ -1,6 +1,6 @@
 // Import Crates
 use yew::prelude::*;
-use web_sys::{wasm_bindgen::JsCast, EventTarget, HtmlInputElement};
+use web_sys::{wasm_bindgen::JsCast, HtmlButtonElement};
 
 fn main() {
     yew::Renderer::<App>::new().render();
@@ -34,74 +34,84 @@ pub fn App() -> Html {
         Addition,
         Subtraction,
         Division,
-        Multiplication
+        Multiplication,
+        Modulus
     }
-    impl TryFrom<char> for Operation {
-        type Error = ();
-        fn try_from(value: char) -> Result<Self, Self::Error> {
+    impl Operation {
+        fn operators(value: char) -> Result<Self, ()> {
             match value {
                 '+' => Ok(Self::Addition),
                 '-' => Ok(Self::Subtraction),
                 '/' => Ok(Self::Division),
                 '*' => Ok(Self::Multiplication),
+                '%' => Ok(Self::Modulus),
                 _ => Err(()),
             }
         }
+        fn maths(&self, inputone:f64, inputtwo:f64) -> f64 {
+            use Operation::*;
+            match self {
+                Addition => inputone + inputtwo,
+                Subtraction => inputone - inputtwo,
+                Division => inputone / inputtwo,
+                Multiplication => inputone * inputtwo,
+                Modulus => inputone % inputtwo,
+            }
+        }
     }
-
+    
     #[derive(PartialEq, Properties)]
     struct CalculatorProps;
-    #[function_component(Calculator)]
-    fn calculator_component(props: &CalculatorProps) -> Html {
-        let equation = use_state(|| Equation::default());
-        let equation_inputs = use_state_eq(|| EquationInputs::InputOne);
 
-        let button_pressed = {
-            let equation = equation.clone();
-            let equation_inputs = equation_inputs.clone();
-            Callback::from(move |event: HtmlInputElement| {
-                // Find out what button was pressed
-                let value: char = unimplemented!();
-                let is_operation: bool = unimplemented!();
+    let equation = use_state(|| Equation::default());
+    let equation_inputs = use_state_eq(|| EquationInputs::InputOne);
+    let button_pressed = {
+        let equation = equation.clone();
+        let equation_inputs = equation_inputs.clone();
+        Callback::from(move |event: MouseEvent| {
+            // Find out what button was pressed
+            let value: String = event.target().unwrap().dyn_into::<HtmlButtonElement>().unwrap().value();
+            let is_operation: bool = match format!("{value}").as_str() {
+                "+" | "-" | "/" | "*" | "%" => true,
+                _ => false
+            };
 
-                let mut new_equation = (*equation).clone();
-                if is_operation {
-                    new_equation.operation = Some(Operation::try_from(value).unwrap());
-                    equation_inputs.set(EquationInputs::InputTwo);
-                } else {
-                    match *equation_inputs {
-                        EquationInputs::InputOne => { new_equation.inputone.push(value); },
-                        EquationInputs::InputTwo => { new_equation.inputtwo.push(value); },
-                    }
+            let mut new_equation = (*equation).clone();
+            if is_operation {
+                new_equation.operation = Some(Operation::operators(value.chars().next().unwrap()).unwrap());
+                equation_inputs.set(EquationInputs::InputTwo);
+            } else {
+                match *equation_inputs {
+                    EquationInputs::InputOne => { new_equation.inputone.push_str(&value); },
+                    EquationInputs::InputTwo => { new_equation.inputtwo.push_str(&value); },
                 }
-                equation.set(new_equation);
-            })
-        };
-        todo!()
-    }
+            }
+            equation.set(new_equation);
+        })
+    };
 
     html! { 
         <div class="dark:bg-black container m-10 mx-auto flex h-screen w-screen rounded-xl bg-gray-600 p-10 drop-shadow-lg">
             <div class="grid gap-2 grid-cols-4 grid-rows-5 w-full h-full">
-                <input type="text" id="result" class="w-full bg-black text-white rounded-xl col-span-4" />
-                <button class="bg-gray-400 rounded-lg">{"AC"}</button>
+                <input value={ (*equation).clone() } type="text" id="result" class="w-full bg-black text-white rounded-xl col-span-4" />
+                <button class="bg-gray-400 rounded-lg">{"C"}</button>
                 <button class="bg-gray-200 rounded-lg">{"()"}</button>
-                <button class="bg-gray-200 rounded-lg">{"%"}</button>
-                <button class="bg-gray-200 rounded-lg">{"÷"}</button>
-                <button class="bg-gray-200 rounded-lg" value="7">{"7"}</button>
-                <button class="bg-gray-200 rounded-lg">{"8"}</button>
-                <button class="bg-gray-200 rounded-lg">{"9"}</button>
-                <button class="bg-gray-200 rounded-lg">{"X"}</button>
-                <button class="bg-gray-200 rounded-lg">{"4"}</button>
-                <button class="bg-gray-200 rounded-lg">{"5"}</button>
-                <button class="bg-gray-200 rounded-lg">{"6"}</button>
-                <button class="bg-gray-200 rounded-lg">{"-"}</button>
-                <button class="bg-gray-200 rounded-lg">{"1"}</button>
-                <button class="bg-gray-200 rounded-lg">{"2"}</button>
-                <button class="bg-gray-200 rounded-lg">{"3"}</button>
-                <button class="bg-gray-200 rounded-lg">{"+"}</button>
-                <button class="bg-gray-200 rounded-lg">{"0"}</button>
-                <button class="bg-gray-200 rounded-lg">{"."}</button>
+                <button class="bg-gray-200 rounded-lg" value="%">{"%"}</button>
+                <button class="bg-gray-200 rounded-lg" value="/">{"÷"}</button>
+                <button class="bg-gray-200 rounded-lg" onclick={ button_pressed } value="7">{"7"}</button>
+                <button class="bg-gray-200 rounded-lg" value="8">{"8"}</button>
+                <button class="bg-gray-200 rounded-lg" value="9">{"9"}</button>
+                <button class="bg-gray-200 rounded-lg" value="*">{"×"}</button>
+                <button class="bg-gray-200 rounded-lg" value="4">{"4"}</button>
+                <button class="bg-gray-200 rounded-lg" value="5">{"5"}</button>
+                <button class="bg-gray-200 rounded-lg" value="6">{"6"}</button>
+                <button class="bg-gray-200 rounded-lg" value="-">{"-"}</button>
+                <button class="bg-gray-200 rounded-lg" value="1">{"1"}</button>
+                <button class="bg-gray-200 rounded-lg" value="2">{"2"}</button>
+                <button class="bg-gray-200 rounded-lg" value="3">{"3"}</button>
+                <button class="bg-gray-200 rounded-lg" value="/">{"+"}</button>
+                <button class="bg-gray-200 rounded-lg" value="0">{"0"}</button>
+                <button class="bg-gray-200 rounded-lg" value=".">{"."}</button>
                 <button class="bg-gray-200 rounded-lg">{"⌫"}</button>
                 <button class="bg-gray-200 rounded-lg">{"="}</button>
             </div>
